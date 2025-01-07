@@ -1,0 +1,95 @@
+/* General Styling */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f8f9fa;
+}
+
+.container {
+    width: 90%;
+    max-width: 800px;
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    color: #333;
+}
+
+h1 {
+    font-size: 24px;
+    margin-bottom: 10px;
+    text-align: center;
+    color: #0056b3;
+}
+
+label {
+    font-weight: bold;
+    margin: 15px 0 5px;
+    display: inline-block;
+}
+
+textarea {
+    width: 100%;
+    padding: 8px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    resize: vertical;
+    min-height: 50px;
+    transition: border-color 0.3s;
+}
+
+textarea:focus {
+    border-color: #0056b3;
+    outline: none;
+}
+
+
+button {
+    display: inline-block;
+    background-color: #0056b3;
+    color: #ffffff;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-top: 10px;
+}
+
+button:hover {
+    background-color: #004494;
+}
+
+/* Output and Saved Section */
+#output-section, #saved-section {
+    margin-top: 20px;
+}
+
+#dvar-torah-text {
+    margin: 15px 0;
+    padding: 15px;
+    background-color: #f1f8ff;
+    border-left: 4px solid #0056b3;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+#saved-dvar-torahs p {
+    margin: 10px 0;
+    padding: 8px;
+    background-color: #f9f9f9;
+    border: 1px solid #eee;
+    border-radius: 4px;
+}

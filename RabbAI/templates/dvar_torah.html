@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dvar Torah</title>
+    <!-- jQuery -->
+    <script src="http://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.min.js"></script>
+    <link rel="stylesheet" href="http://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <!-- Quill CSS -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <script src="https://cdn.ckeditor.com/4.21.0/standard/ckeditor.js"></script>
+
+   
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css">
+    <!-- Font Awesome -->
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- dompurify, html2canvas, jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.3.8/purify.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}">
+   
+</head>
+<body>
+    <div class="purple-ombre-background"></div>
+    <div class="containerD">
+        <div class="row">
+            <div class="col-md-4">
+                <a id="back_button" onclick="goBack()">
+                    <i class="fa-solid fa-arrow-left"></i>&nbsp; Back to Preferences
+                </a>
+                <label for="refinement" id="refinement_header">
+                    What <span class="highlight">changes</span> would you like to make?
+                </label>
+                <textarea id="refinement" rows="4" placeholder="Enter your refinement prompt..."></textarea>
+                <div class="d-flex align-items-center">
+                    <button id="refine_button" onclick="refineDvarTorah()">Refine</button>
+                    <div id="progress-bar-container">
+                        <div id="progress-bar"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <span class="button-wrapper">
+                    <button id="edit_button" onclick="toggleEdit()">Edit</button>
+                    <button id="restore_button" onclick="restorePreviousDraft()">
+                        <i class="fa-solid fa-rotate-left"></i>&nbsp; Restore Previous Draft
+                    </button>
+                    <button id="download_button" onclick="downloadPDF()">
+                        <i class="fa-solid fa-file-pdf"></i>&nbsp; Download PDF
+                    </button>
+                </span>
+                <div class="dvar-torah-card" id="dvar-torah-content" contenteditable="false" style="font-family: 'Times New Roman';">
+
+                    {{ dvar_torah | safe }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const textarea = document.getElementById("refinement");
+            const placeholderTexts = [
+                "Please add another biblical commentary",
+                "Can you add a Ramban?",
+                "Make it sound a bit less formal",
+                "Can you tie in Rosh Chodesh?"
+            ];
+            let textIndex = 0; // Tracks the current placeholder text
+            let charIndex = 0; // Tracks the character being typed
+
+            function typeEffect() {
+                const currentText = placeholderTexts[textIndex];
+                const staticText = "Ex: "; // Static text to remain constant
+                textarea.setAttribute("placeholder", staticText + currentText.substring(0, charIndex));
+                charIndex++;
+
+                if (charIndex > currentText.length) {
+                    // Pause at the end of the current text, then move to the next
+                    setTimeout(() => {
+                        charIndex = 0; // Reset typing for the next text
+                        textIndex = (textIndex + 1) % placeholderTexts.length; // Cycle through texts
+                        typeEffect();
+                    }, 1000); // Pause for 1.5 seconds before switching
+                    return;
+                }
+
+                setTimeout(typeEffect, 70); // Typing speed
+            }
+
+            // Start the looping effect
+            typeEffect();
+
+            
+
+                function goBack() {
+                    window.history.back();
+                }
+
+                function refineDvarTorah() {
+                    const refinement = document.getElementById("refinement").value;
+                    const content = document.getElementById("dvar-torah-content").innerHTML;
+
+                    // Show progress bar and reset its width
+                    const progressBarContainer = document.getElementById("progress-bar-container");
+                    const progressBar = document.getElementById("progress-bar");
+                    progressBarContainer.style.display = "block";
+                    progressBar.style.width = "0%";
+
+                    // Simulate progress bar movement
+                    let progress = 0;
+                    const interval = setInterval(() => {
+                        progress += 10;
+                        progressBar.style.width = `${progress}%`;
+
+                        if (progress >= 100) {
+                            clearInterval(interval);
+                        }
+                    }, 500);
+
+                    // Send the refinement request
+                    fetch("/refine_dvar_torah", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ content, refinement })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById("dvar-torah-content").innerHTML = data.refined_dvar_torah;
+                        console.log( "refinement applied.");
+                        textarea.value = ""; //
+                    })
+                    .catch(error => {
+                        console.error("Error refining Dvar Torah:", error);
+                        console.log( "Error applying refinement.");
+                    })
+                    .finally(() => {
+                        // Hide the progress bar after refinement is complete
+                        setTimeout(() => {
+                            progressBarContainer.style.display = "none";
+                            progressBar.style.width = "0%"; // Reset the progress bar
+                        }, 500);
+                    });
+                }
+
+                function toggleEdit() {
+                const content = document.getElementById("dvar-torah-content");
+                const editButton = document.getElementById("edit_button");
+
+                if (!content.classList.contains("editing")) {
+                    CKEDITOR.replace("dvar-torah-content", {
+                    height: "80vh",
+                    removePlugins: "elementspath", // Optional: Remove the path display
+                    resize_enabled: false,
+                    toolbar: [
+                        ["Bold", "Italic", "Underline"],
+                        ["NumberedList", "BulletedList"],
+                        ["Link", "Unlink"],
+                        ["Undo", "Redo"]
+                    ],
+                    contentsCss: [
+                        "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css", // External CSS if needed
+                        "data:text/css;charset=utf-8," + encodeURIComponent(`
+                            body {
+                                margin: 20px; /* Add margins to the content */
+                                font-family: 'Times New Roman', serif; /* Example font */
+                                line-height: 1.5; /* Improve readability */
+                            }
+                        `)
+                    ]
+                });
+
+
+                    content.classList.add("editing");
+                    editButton.textContent = "Save";
+                } else {
+                    // Save edited content
+                    const updatedContent = CKEDITOR.instances["dvar-torah-content"].getData();
+                    CKEDITOR.instances["dvar-torah-content"].destroy();
+                    content.innerHTML = updatedContent;
+                    content.classList.remove("editing");
+                    editButton.textContent = "Edit";
+                    saveManualEdit(updatedContent);
+                }
+            }
+
+                function restorePreviousDraft() {
+                    fetch("/restore_previous_draft", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ user_id: "default" })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById("dvar-torah-content").innerHTML = data.restored_dvar_torah;
+                        document.getElementById("refinement-output").innerText = "Previous draft restored!";
+                    })
+                    .catch(error => {
+                        console.error("Error restoring previous draft:", error);
+                        document.getElementById("refinement-output").innerText = "Error restoring draft.";
+                    });
+                }
+
+                function downloadPDF() {
+                    const content = document.getElementById("dvar-torah-content");
+                    content.classList.add("no-border");
+
+                    html2canvas(content, { scale: 2 }).then(canvas => {
+                        content.classList.remove("no-border");
+                        const imgData = canvas.toDataURL("image/png");
+                        const pdf = new jspdf.jsPDF("p", "mm", "a4");
+
+                        const imgWidth = 190;
+                        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                        let position = 10;
+
+                        if (imgHeight < 297) {
+                            pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+                        } else {
+                            let remainingHeight = imgHeight;
+                            while (remainingHeight > 0) {
+                                pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+                                remainingHeight -= 297 - position;
+                                if (remainingHeight > 0) {
+                                    pdf.addPage();
+                                    position = 10;
+                                }
+                            }
+                        }
+                        pdf.save("Dvar_Torah.pdf");
+                    });
+                }
+
+                function saveManualEdit(updatedContent) {
+                fetch("/save_manual_edit", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ user_id: "default", content: updatedContent })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById("refinement-output").innerText = "Changes saved!";
+                    } else {
+                        console.error("Error saving manual edit:", data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error saving manual edit:", error);
+                    document.getElementById("refinement-output").innerText = "Error saving changes.";
+                });
+            }
+
+    </script>
+</body>
+
+</html>
